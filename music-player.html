@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Player</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --bg: #0a0a0a; --surface: #111111; --surface2: #1a1a1a; --border: rgba(255,255,255,0.07); --accent: #c8f135; --accent-dim: rgba(200,241,53,0.15); --text: #f0f0f0; --muted: #666; --muted2: #444; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .app { width: 100%; max-width: 420px; }
+  .header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 28px; }
+  .header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 42px; letter-spacing: 2px; color: var(--text); line-height: 1; }
+  .header .dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; margin-bottom: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.7); } }
+  .token-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+  .token-label { font-size: 11px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .token-row { display: flex; gap: 8px; }
+  input[type="password"], input[type="text"] { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; transition: border-color 0.2s; }
+  input:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted2); }
+  .btn { background: var(--accent); color: #000; border: none; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; white-space: nowrap; transition: opacity 0.2s, transform 0.1s; }
+  .btn:hover { opacity: 0.85; } .btn:active { transform: scale(0.97); }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .status { font-size: 12px; color: var(--muted); margin-top: 8px; min-height: 16px; }
+  .status.ok { color: var(--accent); } .status.err { color: #ff5555; }
+  .now-playing { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 20px; margin-bottom: 16px; }
+  .np-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 1px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+  .np-sub { font-size: 12px; color: var(--muted); margin-top: 3px; margin-bottom: 18px; }
+  .viz { display: flex; align-items: flex-end; gap: 3px; height: 32px; margin-bottom: 14px; }
+  .viz-bar { flex: 1; background: var(--muted2); border-radius: 2px; min-height: 3px; transition: height 0.1s; }
+  .viz-bar.active { background: var(--accent); }
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 3px; background: var(--surface2); border-radius: 2px; outline: none; border: none; padding: 0; cursor: pointer; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+  #progressBar { background: linear-gradient(to right, var(--accent) var(--prog, 0%), var(--surface2) var(--prog, 0%)); }
+  .time-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 18px; }
+  .controls { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; }
+  .ctrl { background: var(--surface2); border: 1px solid var(--border); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: border-color 0.2s; color: var(--text); }
+  .ctrl:hover { border-color: var(--accent); color: var(--accent); }
+  .ctrl.play-btn { width: 52px; height: 52px; background: var(--accent); border-color: var(--accent); color: #000; }
+  .ctrl.play-btn:hover { opacity: 0.85; color: #000; }
+  .vol-row { display: flex; align-items: center; gap: 10px; }
+  .vol-icon { font-size: 14px; color: var(--muted); }
+  .vol-val { font-size: 11px; color: var(--muted); min-width: 32px; text-align: right; }
+  .tracklist-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
+  .tracklist-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .tracklist-head span { font-size: 11px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .track-scroll { max-height: 280px; overflow-y: auto; }
+  .track-scroll::-webkit-scrollbar { width: 3px; }
+  .track-scroll::-webkit-scrollbar-thumb { background: var(--muted2); border-radius: 2px; }
+  .track-item { display: flex; align-items: center; gap: 12px; padding: 11px 16px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  .track-item:last-child { border-bottom: none; }
+  .track-item:hover { background: var(--surface2); }
+  .track-item.active { background: var(--accent-dim); }
+  .track-item.active .track-name { color: var(--accent); }
+  .track-num { font-size: 11px; color: var(--muted2); width: 20px; text-align: center; }
+  .track-item.active .track-num { display: none; }
+  .track-playing { display: none; width: 20px; justify-content: center; gap: 2px; height: 14px; align-items: flex-end; }
+  .track-item.active .track-playing { display: flex; }
+  .bar-anim { width: 3px; background: var(--accent); border-radius: 1px; animation: barAnim 0.8s ease-in-out infinite alternate; }
+  .bar-anim:nth-child(2) { animation-delay: 0.2s; } .bar-anim:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes barAnim { from { height: 3px; } to { height: 14px; } }
+  .track-name { flex: 1; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+  .empty { padding: 32px 16px; text-align: center; font-size: 13px; color: var(--muted2); line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header"><h1>PLAYER</h1><div class="dot"></div></div>
+
+  <div class="token-card">
+    <div class="token-label">Яндекс.Диск</div>
+    <div class="token-row">
+      <input type="password" id="tokenInput" placeholder="OAuth токен y0_Ag..." />
+      <button class="btn" onclick="connectYandex()">Войти</button>
+    </div>
+    <div class="token-row" style="margin-top:8px;">
+      <input type="text" id="pathInput" value="/music" placeholder="Папка /music" />
+      <button class="btn btn-ghost" onclick="loadTracks()">Загрузить</button>
+    </div>
+    <div class="status" id="status">Введите токен для начала</div>
+  </div>
+
+  <div class="now-playing">
+    <div class="np-title" id="npTitle">НЕТ ТРЕКА</div>
+    <div class="np-sub" id="npSub">выберите трек из списка</div>
+    <div class="viz" id="viz"></div>
+    <input type="range" id="progressBar" min="0" max="100" value="0" step="0.1" oninput="seekTo(this.value)" style="margin-bottom:6px;" />
+    <div class="time-row"><span id="curTime">0:00</span><span id="durTime">0:00</span></div>
+    <div class="controls">
+      <div class="ctrl" onclick="prevTrack()"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M2 2h2v10H2V2zm8.5 1.5L5 7l5.5 3.5V3.5z"/></svg></div>
+      <div class="ctrl play-btn" onclick="togglePlay()">
+        <svg id="playIcon" width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><path d="M5 3.5l10 5.5-10 5.5V3.5z"/></svg>
+        <svg id="pauseIcon" width="18" height="18" viewBox="0 0 18 18" fill="currentColor" style="display:none"><path d="M5 3h3v12H5V3zm5 0h3v12h-3V3z"/></svg>
+      </div>
+      <div class="ctrl" onclick="nextTrack()"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M10 2h2v10h-2V2zM3.5 3.5L9 7 3.5 10.5V3.5z"/></svg></div>
+    </div>
+    <div class="vol-row">
+      <span class="vol-icon">♪</span>
+      <input type="range" id="volBar" min="0" max="1" step="0.01" value="0.8" oninput="setVolume(this.value)" />
+      <span class="vol-val" id="volVal">80%</span>
+    </div>
+  </div>
+
+  <div class="tracklist-card">
+    <div class="tracklist-head">
+      <span id="listTitle">Треки</span>
+      <span id="trackCount" style="letter-spacing:0;text-transform:none;"></span>
+    </div>
+    <div class="track-scroll">
+      <div id="trackList"><div class="empty">Подключите Яндекс.Диск<br>и загрузите треки</div></div>
+    </div>
+  </div>
+</div>
+
+<audio id="audioEl"></audio>
+<script>
+const PROXY = 'http://localhost:3000/';
+const audio = document.getElementById('audioEl');
+let tracks = [], currentIdx = -1, token = '', vizInterval = null, vizBars = [];
+
+const vizEl = document.getElementById('viz');
+for (let i = 0; i < 28; i++) {
+  const b = document.createElement('div');
+  b.className = 'viz-bar';
+  vizEl.appendChild(b);
+  vizBars.push(b);
+}
+
+function animateViz(on) {
+  clearInterval(vizInterval);
+  if (!on) { vizBars.forEach(b => { b.style.height = '3px'; b.classList.remove('active'); }); return; }
+  vizBars.forEach(b => b.classList.add('active'));
+  vizInterval = setInterval(() => vizBars.forEach(b => b.style.height = (Math.random()*28+3)+'px'), 120);
+}
+
+function setStatus(msg, type='') { const e = document.getElementById('status'); e.textContent = msg; e.className = 'status '+type; }
+
+function apiGet(url) {
+  return fetch(PROXY + url, { headers: { 'Authorization': 'OAuth ' + token } }).then(r => r.json());
+}
+
+function connectYandex() {
+  token = document.getElementById('tokenInput').value.trim();
+  if (!token) { setStatus('Введите токен', 'err'); return; }
+  setStatus('Подключаемся...', '');
+  apiGet('https://cloud-api.yandex.net/v1/disk/')
+    .then(d => {
+      if (d.total_space) setStatus('Подключено — ' + (d.total_space/1e9).toFixed(0) + ' ГБ', 'ok');
+      else { setStatus('Ошибка: ' + (d.message||'неверный токен'), 'err'); token=''; }
+    }).catch(() => setStatus('Ошибка: запусти server.js командой node server.js', 'err'));
+}
+
+function loadTracks() {
+  if (!token) { setStatus('Сначала подключитесь', 'err'); return; }
+  const path = document.getElementById('pathInput').value.trim() || '/music';
+  setStatus('Загружаем треки...', '');
+  apiGet(`https://cloud-api.yandex.net/v1/disk/resources?path=${encodeURIComponent(path)}&limit=200`)
+    .then(d => {
+      if (!d._embedded) { setStatus('Папка не найдена', 'err'); return; }
+      const items = d._embedded.items.filter(i => i.media_type === 'audio');
+      if (!items.length) { setStatus('Аудио файлы не найдены', 'err'); return; }
+      tracks = items.map(i => ({ name: i.name.replace(/\.[^.]+$/, ''), path: i.path }));
+      renderTracks();
+      setStatus('Загружено: ' + tracks.length + ' треков', 'ok');
+      document.getElementById('trackCount').textContent = tracks.length + ' треков';
+    }).catch(() => setStatus('Ошибка загрузки', 'err'));
+}
+
+function renderTracks() {
+  document.getElementById('trackList').innerHTML = tracks.length
+    ? tracks.map((t,i) => `<div class="track-item ${i===currentIdx?'active':''}" onclick="playTrack(${i})">
+        <div class="track-num">${i+1}</div>
+        <div class="track-playing"><div class="bar-anim"></div><div class="bar-anim"></div><div class="bar-anim"></div></div>
+        <div class="track-name">${t.name}</div></div>`).join('')
+    : '<div class="empty">Треков не найдено</div>';
+}
+
+function playTrack(idx) {
+  if (!token) return;
+  currentIdx = idx; renderTracks();
+  const t = tracks[idx];
+  document.getElementById('npTitle').textContent = t.name.toUpperCase();
+  document.getElementById('npSub').textContent = 'Яндекс.Диск · /music';
+  setStatus('Получаем ссылку...', '');
+  apiGet(`https://cloud-api.yandex.net/v1/disk/resources/download?path=${encodeURIComponent(t.path)}`)
+    .then(d => {
+      if (!d.href) { setStatus('Не удалось получить ссылку', 'err'); return; }
+      audio.src = d.href;
+      audio.volume = parseFloat(document.getElementById('volBar').value);
+      audio.play();
+      setStatus('', '');
+    }).catch(() => setStatus('Ошибка воспроизведения', 'err'));
+}
+
+function togglePlay() { if (!audio.src) return; audio.paused ? audio.play() : audio.pause(); }
+function prevTrack() { if (currentIdx > 0) playTrack(currentIdx-1); }
+function nextTrack() { if (currentIdx < tracks.length-1) playTrack(currentIdx+1); }
+function seekTo(val) { if (audio.duration) audio.currentTime = (val/100)*audio.duration; }
+function setVolume(val) { audio.volume = parseFloat(val); document.getElementById('volVal').textContent = Math.round(val*100)+'%'; }
+function fmt(s) { return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0'); }
+
+audio.addEventListener('timeupdate', () => {
+  if (!audio.duration) return;
+  const pct = (audio.currentTime/audio.duration)*100;
+  const bar = document.getElementById('progressBar');
+  bar.value = pct; bar.style.setProperty('--prog', pct+'%');
+  document.getElementById('curTime').textContent = fmt(audio.currentTime);
+  document.getElementById('durTime').textContent = fmt(audio.duration);
+});
+audio.addEventListener('play', () => { document.getElementById('playIcon').style.display='none'; document.getElementById('pauseIcon').style.display='block'; animateViz(true); });
+audio.addEventListener('pause', () => { document.getElementById('playIcon').style.display='block'; document.getElementById('pauseIcon').style.display='none'; animateViz(false); });
+audio.addEventListener('ended', () => { animateViz(false); nextTrack(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "music-player",
+  "version": "1.0.0",
+  "description": "Music player proxy for Yandex Disk",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
