@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WAVE</title>
+<link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap" rel="stylesheet">
+
+<!-- PWA -->
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WAVE">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='115' fill='%230a0a0f'/%3E%3Cellipse cx='256' cy='256' rx='200' ry='200' fill='%23ffffff08' stroke='%23ffffff22' stroke-width='2'/%3E%3Cpath d='M180 180 Q200 140 256 140 Q312 140 332 180 L332 332 Q312 372 256 372 Q200 372 180 332 Z' fill='none' stroke='%2364d2ff' stroke-width='3' opacity='0.7'/%3E%3Ccircle cx='256' cy='256' r='40' fill='%2364d2ff' opacity='0.9'/%3E%3Cpath d='M240 248 L278 256 L240 264 Z' fill='%230a0a0f'/%3E%3C/svg%3E">
+<link rel="manifest" href="/manifest.json">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Base palette */
+  --bg: #0a0a0f;
+  --glass-bg: rgba(255,255,255,0.07);
+  --glass-bg2: rgba(255,255,255,0.11);
+  --glass-bg3: rgba(255,255,255,0.16);
+  --glass-border: rgba(255,255,255,0.18);
+  --glass-border2: rgba(255,255,255,0.32);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+  --glass-shadow-lg: 0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2);
+  --accent: #64d2ff;
+  --accent2: #bf5af2;
+  --accent3: #30d158;
+  --text: rgba(255,255,255,0.95);
+  --text2: rgba(255,255,255,0.6);
+  --text3: rgba(255,255,255,0.35);
+  --sidebar-w: 240px;
+  --bar-h: 88px;
+  --r: 16px;
+  --r2: 20px;
+  --r3: 28px;
+  --blur: blur(28px) saturate(180%);
+  --blur2: blur(40px) saturate(200%);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;overflow:hidden}
+
+/* Ambient background blobs */
+body::before,body::after{
+  content:'';position:fixed;border-radius:50%;pointer-events:none;z-index:0;
+  filter:blur(80px);opacity:.35;
+}
+body::before{
+  width:600px;height:600px;top:-200px;left:-150px;
+  background:radial-gradient(circle,#3d2b7a 0%,#1a1040 50%,transparent 70%);
+}
+body::after{
+  width:500px;height:500px;bottom:-150px;right:-100px;
+  background:radial-gradient(circle,#0d3d5c 0%,#061825 50%,transparent 70%);
+}
+
+/* Glass mixin utility */
+.glass{
+  background:var(--glass-bg);
+  backdrop-filter:var(--blur);
+  -webkit-backdrop-filter:var(--blur);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--glass-shadow);
+}
+.glass2{
+  background:var(--glass-bg2);
+  backdrop-filter:var(--blur2);
+  -webkit-backdrop-filter:var(--blur2);
+  border:1px solid var(--glass-border2);
+  box-shadow:var(--glass-shadow-lg);
+}
+
+/* LAYOUT */
+.app{display:flex;flex-direction:column;height:100%;position:relative;z-index:1}
+.body{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{
+  width:var(--sidebar-w);
+  background:rgba(12,12,20,0.6);
+  backdrop-filter:var(--blur2);
+  -webkit-backdrop-filter:var(--blur2);
+  border-right:1px solid var(--glass-border);
+  display:flex;flex-direction:column;flex-shrink:0;
+  position:relative;z-index:10;
+}
+.logo{
+  padding:24px 18px 20px;
+  font-size:21px;font-weight:800;letter-spacing:-0.5px;
+  border-bottom:1px solid var(--glass-border);
+  display:flex;align-items:center;gap:10px;
+}
+.pulse-dot{
+  width:9px;height:9px;border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 10px var(--accent);
+  animation:pulse 2s ease-in-out infinite;
+  flex-shrink:0;
+}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1;box-shadow:0 0 10px var(--accent)}50%{transform:scale(.5);opacity:.4;box-shadow:0 0 4px var(--accent)}}
+
+.nav{padding:14px 12px 6px;display:flex;flex-direction:column;gap:2px}
+.ni{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:11px;
+  cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);
+  transition:all .2s cubic-bezier(.4,0,.2,1);user-select:none;
+}
+.ni:hover{background:var(--glass-bg);color:var(--text)}
+.ni.on{
+  background:var(--glass-bg2);
+  color:var(--accent);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 2px 8px rgba(0,0,0,0.2);
+}
+.ni svg{opacity:.7}
+.ni.on svg{opacity:1}
+
+.sidebar-section{
+  font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+  color:var(--text3);padding:16px 18px 6px;
+}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:0 12px 12px}
+.sidebar-scroll::-webkit-scrollbar{width:2px}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+
+.sai{
+  display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;
+  cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);
+  transition:all .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sai:hover{background:var(--glass-bg);color:var(--text)}
+.sai.on{color:var(--accent)}
+.sai-av{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--glass-bg2);
+  border:1px solid var(--glass-border);
+  flex-shrink:0;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;
+}
+.sai-av img{width:100%;height:100%;object-fit:cover}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* TOPBAR */
+.topbar{
+  height:54px;border-bottom:1px solid var(--glass-border);
+  background:rgba(10,10,18,0.5);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;
+}
+.searchbox{flex:1;max-width:320px;position:relative}
+.searchbox input{
+  width:100%;
+  background:var(--glass-bg);
+  border:1px solid var(--glass-border);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-radius:22px;
+  padding:8px 14px 8px 36px;
+  font-size:13px;font-family:'Syne',sans-serif;
+  color:var(--text);outline:none;
+  transition:all .2s;
+}
+.searchbox input:focus{border-color:var(--glass-border2);background:var(--glass-bg2)}
+.searchbox input::placeholder{color:var(--text3)}
+.si{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
+
+.tr{margin-left:auto;display:flex;align-items:center;gap:8px}
+.pill{
+  display:flex;align-items:center;gap:5px;padding:5px 12px;
+  background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:20px;
+  font-size:11px;font-weight:600;color:var(--text2);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+.pill.ok{color:var(--accent3);border-color:rgba(48,209,88,.25)}
+.pill.err{color:#ff453a;border-color:rgba(255,69,58,.25)}
+.rbtn{
+  background:var(--glass-bg);border:1px solid var(--glass-border);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-radius:10px;padding:7px 13px;font-size:12px;
+  font-family:'Syne',sans-serif;font-weight:700;color:var(--text2);
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;
+}
+.rbtn:hover{border-color:var(--accent);color:var(--accent);background:rgba(100,210,255,.08)}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:22px 24px;scroll-behavior:smooth}
+.content::-webkit-scrollbar{width:3px}
+.content::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+
+/* VIEWS */
+.view{display:none}.view.on{display:block}
+
+/* HERO / NOW PLAYING */
+.hero{
+  background:linear-gradient(135deg,rgba(30,20,50,0.8),rgba(10,20,40,0.9));
+  backdrop-filter:var(--blur2);
+  -webkit-backdrop-filter:var(--blur2);
+  border:1px solid var(--glass-border2);
+  box-shadow:var(--glass-shadow-lg);
+  border-radius:var(--r3);
+  padding:24px;margin-bottom:24px;
+  display:flex;gap:20px;align-items:center;
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(100,210,255,.04),rgba(191,90,242,.04));
+  pointer-events:none;
+}
+.hero::after{
+  content:'';position:absolute;top:-80px;right:-80px;
+  width:280px;height:280px;
+  background:radial-gradient(circle,rgba(100,210,255,.08),transparent 60%);
+  pointer-events:none;
+}
+.hero-art{
+  width:96px;height:96px;border-radius:14px;
+  background:var(--glass-bg2);
+  border:1px solid var(--glass-border);
+  flex-shrink:0;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  font-size:34px;position:relative;
+  box-shadow:0 8px 24px rgba(0,0,0,0.5);
+}
+.hero-art img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.vinyl{
+  position:absolute;width:78px;height:78px;border-radius:50%;
+  border:3px solid transparent;
+  border-top-color:var(--accent);
+  border-right-color:rgba(100,210,255,.3);
+  animation:spin 1.8s linear infinite;opacity:0;transition:opacity .4s;
+}
+.playing .vinyl{opacity:1}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.hero-info{flex:1;min-width:0;position:relative;z-index:1}
+.hero-label{
+  font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:6px;opacity:.8;
+}
+.hero-title{
+  font-size:22px;font-weight:800;letter-spacing:-.5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;
+}
+.hero-sub{font-size:12px;color:var(--text2);margin-bottom:14px}
+.viz{display:flex;align-items:flex-end;gap:2px;height:22px;margin-bottom:12px}
+.vb{width:3px;background:rgba(255,255,255,0.12);border-radius:2px;min-height:3px;transition:height .08s}
+.vb.on{background:var(--accent);box-shadow:0 0 6px rgba(100,210,255,.5)}
+
+input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:3px;
+  background:rgba(255,255,255,0.1);border-radius:2px;
+  outline:none;border:none;padding:0;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:13px;height:13px;border-radius:50%;
+  background:white;cursor:pointer;transition:transform .1s;
+  box-shadow:0 0 8px rgba(100,210,255,.4);
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3)}
+#pbar{background:linear-gradient(to right,var(--accent) var(--p,0%),rgba(255,255,255,.1) var(--p,0%))}
+.trow{display:flex;justify-content:space-between;font-size:10px;font-family:'Syne Mono',monospace;color:var(--text3);margin-top:5px}
+
+/* SECTION */
+.sh{display:flex;align-items:baseline;gap:10px;margin-bottom:16px}
+.st{font-size:20px;font-weight:800;letter-spacing:-.4px}
+.sc{font-size:11px;color:var(--text3);font-weight:500}
+
+/* GRID */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:14px;margin-bottom:28px}
+.card{
+  background:var(--glass-bg);
+  border:1px solid var(--glass-border);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-radius:var(--r2);padding:14px;cursor:pointer;
+  transition:all .25s cubic-bezier(.4,0,.2,1);position:relative;
+}
+.card:hover{
+  border-color:var(--glass-border2);
+  transform:translateY(-3px) scale(1.01);
+  background:var(--glass-bg2);
+  box-shadow:0 16px 40px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.card-img{
+  width:100%;aspect-ratio:1;border-radius:12px;
+  background:var(--glass-bg2);
+  border:1px solid var(--glass-border);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+  margin-bottom:11px;position:relative;
+}
+.card-img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.card-letter{font-size:40px;font-weight:800;color:rgba(255,255,255,0.12);position:relative;z-index:1}
+.card-ov{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.4);
+  backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .2s;border-radius:12px;
+}
+.card:hover .card-ov{opacity:1}
+.play-circle{
+  width:40px;height:40px;
+  background:rgba(255,255,255,0.95);
+  box-shadow:0 4px 16px rgba(0,0,0,0.5);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;color:#000;
+  transform:scale(.9);transition:transform .2s;
+}
+.card:hover .play-circle{transform:scale(1)}
+.card-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.card-sub{font-size:11px;color:var(--text3)}
+
+/* TRACKLIST */
+.tlist{
+  background:var(--glass-bg);
+  backdrop-filter:var(--blur);
+  -webkit-backdrop-filter:var(--blur);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--glass-shadow);
+  border-radius:var(--r2);overflow:hidden;
+}
+.thead{
+  display:grid;grid-template-columns:40px 1fr 160px 52px;
+  padding:10px 16px;border-bottom:1px solid var(--glass-border);
+  font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);
+}
+.titem{
+  display:grid;grid-template-columns:40px 1fr 160px 52px;
+  padding:10px 16px;align-items:center;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  cursor:pointer;transition:background .15s;
+}
+.titem:last-child{border-bottom:none}
+.titem:hover{background:rgba(255,255,255,0.04)}
+.titem.on{background:rgba(100,210,255,0.07)}
+.titem.on .t-title{color:var(--accent)}
+
+.tnum{font-family:'Syne Mono',monospace;font-size:12px;color:var(--text3);display:flex;align-items:center;justify-content:center}
+.tbars{display:none;align-items:flex-end;justify-content:center;gap:2px;height:14px}
+.titem.on .tnum-v{display:none}
+.titem.on .tbars{display:flex}
+.tb{width:3px;background:var(--accent);border-radius:1px;animation:tb .7s ease-in-out infinite alternate;box-shadow:0 0 4px rgba(100,210,255,.5)}
+.tb:nth-child(2){animation-delay:.15s}.tb:nth-child(3){animation-delay:.3s}
+@keyframes tb{from{height:3px}to{height:12px}}
+
+.t-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:10px}
+.t-art{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-dur{font-family:'Syne Mono',monospace;font-size:11px;color:var(--text3);text-align:right}
+
+/* TRACK WITH ART */
+.titem-art{width:34px;height:34px;border-radius:7px;background:var(--glass-bg2);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;border:1px solid var(--glass-border)}
+.titem-art img{width:100%;height:100%;object-fit:cover}
+.thead-art{display:grid;grid-template-columns:40px 46px 1fr 160px 52px;padding:10px 16px;border-bottom:1px solid var(--glass-border);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
+.titem-art-row{display:grid;grid-template-columns:40px 46px 1fr 160px 52px;padding:9px 16px;align-items:center;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;transition:background .15s}
+.titem-art-row:last-child{border-bottom:none}
+.titem-art-row:hover{background:rgba(255,255,255,0.04)}
+.titem-art-row.on{background:rgba(100,210,255,0.07)}
+.titem-art-row.on .t-title{color:var(--accent)}
+
+/* PLAYER BAR */
+.pbar-wrap{
+  height:var(--bar-h);
+  background:rgba(10,10,20,0.7);
+  backdrop-filter:var(--blur2);
+  -webkit-backdrop-filter:var(--blur2);
+  border-top:1px solid var(--glass-border);
+  display:grid;grid-template-columns:1fr 320px 1fr;
+  align-items:center;padding:0 20px;flex-shrink:0;gap:14px;
+  padding-bottom:var(--safe-bottom);
+}
+.pb-track{display:flex;align-items:center;gap:12px;min-width:0}
+.pb-art{
+  width:44px;height:44px;border-radius:9px;
+  background:var(--glass-bg2);
+  border:1px solid var(--glass-border);
+  flex-shrink:0;overflow:hidden;position:relative;
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+}
+.pb-art img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.pb-info{min-width:0}
+.pb-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb-artist{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb-ctrls{display:flex;flex-direction:column;align-items:center;gap:6px}
+.pb-btns{display:flex;align-items:center;gap:6px}
+.ctrl{
+  background:none;border:none;color:var(--text2);cursor:pointer;
+  border-radius:50%;width:32px;height:32px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.ctrl:hover{color:var(--text);background:var(--glass-bg)}
+.ctrl.play{
+  width:38px;height:38px;
+  background:white;
+  color:#000;border-radius:50%;
+  box-shadow:0 4px 16px rgba(255,255,255,0.25);
+  transition:transform .1s,opacity .15s;
+}
+.ctrl.play:hover{transform:scale(1.07);opacity:.95}
+.ctrl.on{color:var(--accent)}
+.pb-prog{width:100%;display:flex;align-items:center;gap:8px}
+.pt{font-family:'Syne Mono',monospace;font-size:10px;color:var(--text3);white-space:nowrap}
+.pb-right{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+#volBar{width:80px}
+#pbar2{background:linear-gradient(to right,rgba(255,255,255,0.9) 0%,rgba(255,255,255,0.1) 0%)}
+
+/* DETAIL PAGES */
+.dh{display:flex;gap:22px;align-items:flex-end;padding-bottom:24px;border-bottom:1px solid var(--glass-border);margin-bottom:22px}
+.da{
+  width:114px;height:114px;border-radius:var(--r);
+  background:var(--glass-bg2);border:1px solid var(--glass-border);
+  flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:44px;
+  box-shadow:0 12px 32px rgba(0,0,0,0.5);
+}
+.da img{width:100%;height:100%;object-fit:cover}
+.di-type{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.di-name{font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:6px;line-height:1.1}
+.di-meta{font-size:12px;color:var(--text2)}
+
+.back{
+  display:inline-flex;align-items:center;gap:6px;padding:6px 13px;
+  background:var(--glass-bg);border:1px solid var(--glass-border);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-radius:10px;font-size:12px;font-family:'Syne',sans-serif;font-weight:700;
+  color:var(--text2);cursor:pointer;margin-bottom:18px;transition:all .2s;
+}
+.back:hover{color:var(--text);border-color:var(--glass-border2);background:var(--glass-bg2)}
+
+.play-all{
+  display:inline-flex;align-items:center;gap:7px;padding:10px 20px;
+  background:white;border:none;border-radius:11px;
+  font-size:13px;font-family:'Syne',sans-serif;font-weight:700;
+  color:#000;cursor:pointer;margin-top:12px;
+  transition:opacity .15s,transform .1s;
+  box-shadow:0 4px 16px rgba(255,255,255,0.2);
+}
+.play-all:hover{opacity:.9;transform:scale(1.02)}
+
+/* STATES */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:70px 20px;text-align:center;gap:10px}
+.ei{font-size:46px;opacity:.25;margin-bottom:8px}
+.et{font-size:17px;font-weight:700}
+.es{font-size:13px;color:var(--text2);max-width:280px;line-height:1.6}
+.loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:50px;color:var(--text2);font-size:13px}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,0.1);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:calc(var(--bar-h) + 16px);left:50%;
+  transform:translateX(-50%) translateY(12px);
+  background:var(--glass-bg3);
+  border:1px solid var(--glass-border2);
+  backdrop-filter:var(--blur2);-webkit-backdrop-filter:var(--blur2);
+  border-radius:14px;padding:10px 18px;font-size:13px;font-weight:600;
+  opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:999;white-space:nowrap;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ================================
+   MOBILE LAYOUT
+   ================================ */
+@media (max-width:680px){
+  :root{
+    --sidebar-w:0px;
+    --bar-h:72px;
+  }
+
+  .sidebar{
+    position:fixed;bottom:0;left:0;right:0;top:auto;
+    width:100%!important;height:auto;
+    flex-direction:row;
+    border-right:none;border-top:1px solid var(--glass-border);
+    z-index:100;
+    padding-bottom:var(--safe-bottom);
+  }
+  .logo,.sidebar-section,.sidebar-scroll{display:none}
+  .nav{
+    flex-direction:row;padding:8px 8px 6px;gap:0;
+    width:100%;justify-content:space-around;
+  }
+  .ni{
+    flex-direction:column;gap:4px;padding:6px 8px;
+    font-size:10px;border-radius:10px;flex:1;justify-content:center;
+  }
+  .ni svg{width:20px;height:20px}
+
+  .body{padding-bottom:calc(64px + var(--safe-bottom))}
+  .app{padding-bottom:0}
+
+  .pbar-wrap{
+    position:fixed;bottom:calc(56px + var(--safe-bottom));left:0;right:0;
+    height:auto;
+    grid-template-columns:1fr;
+    grid-template-rows:auto auto;
+    padding:10px 16px 12px;
+    gap:8px;
+    z-index:99;
+    border-top:1px solid var(--glass-border);
+  }
+  .pb-track{order:1}
+  .pb-ctrls{order:2;width:100%}
+  .pb-right{display:none}
+  .pb-btns{gap:10px}
+  .ctrl{width:36px;height:36px}
+  .ctrl.play{width:42px;height:42px}
+
+  .content{padding:14px 14px 16px}
+
+  .hero{padding:16px;gap:14px;border-radius:var(--r2)}
+  .hero-art{width:76px;height:76px;font-size:26px}
+  .hero-title{font-size:17px}
+  .hero-label{font-size:9px}
+
+  .grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+
+  .thead{grid-template-columns:36px 1fr 52px}
+  .thead span:nth-child(3){display:none}
+  .titem{grid-template-columns:36px 1fr 52px}
+  .titem .t-art{display:none}
+
+  .thead-art{grid-template-columns:36px 40px 1fr 52px}
+  .thead-art span:nth-child(4){display:none}
+  .titem-art-row{grid-template-columns:36px 40px 1fr 52px}
+  .titem-art-row .t-art{display:none}
+
+  .dh{flex-direction:column;align-items:flex-start;gap:14px}
+  .da{width:90px;height:90px;font-size:34px}
+  .di-name{font-size:24px}
+
+  .topbar{padding:0 14px;gap:10px;height:48px}
+  .rbtn span{display:none}
+
+  .toast{bottom:calc(72px + 56px + var(--safe-bottom) + 16px)}
+}
+
+/* ================================
+   TABLET
+   ================================ */
+@media (min-width:681px) and (max-width:900px){
+  :root{--sidebar-w:200px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="body">
+    <!-- SIDEBAR / MOBILE BOTTOM NAV -->
+    <aside class="sidebar">
+      <div class="logo"><div class="pulse-dot"></div>WAVE</div>
+      <nav class="nav">
+        <div class="ni on" id="ni-artists" onclick="nav('artists')">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm-5 6s-.5-5 5-5 5 5 5 5H3z"/></svg>
+          <span>Исполнители</span>
+        </div>
+        <div class="ni" id="ni-tracks" onclick="nav('tracks')">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M2 4h12v1.5H2zm0 3h12v1.5H2zm0 3h8v1.5H2z"/></svg>
+          <span>Треки</span>
+        </div>
+      </nav>
+      <div class="sidebar-section">Исполнители</div>
+      <div class="sidebar-scroll" id="sbArtists"></div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="topbar">
+        <div class="searchbox">
+          <svg class="si" width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M11.7 10.3a6.5 6.5 0 10-1.4 1.4l3.9 3.8a1 1 0 001.4-1.4l-3.9-3.8zM6.5 11a4.5 4.5 0 110-9 4.5 4.5 0 010 9z"/></svg>
+          <input type="text" id="srch" placeholder="Поиск..." oninput="onSearch(this.value)">
+        </div>
+        <div class="tr">
+          <div class="pill" id="pill">⟳ Подключение...</div>
+          <button class="rbtn" onclick="loadLib()">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 8A5.5 5.5 0 102 8h2a3.5 3.5 0 117 0H9l4 4 4-4h-3.5z"/></svg>
+            <span>Обновить</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- ARTISTS -->
+        <div class="view on" id="view-artists">
+          <div class="sh"><div class="st">Исполнители</div><div class="sc" id="artC"></div></div>
+          <div class="grid" id="artGrid"></div>
+        </div>
+
+        <!-- ALL TRACKS -->
+        <div class="view" id="view-tracks">
+          <div class="sh"><div class="st">Все треки</div><div class="sc" id="allC"></div></div>
+          <div id="allTL"></div>
+        </div>
+
+        <!-- ARTIST DETAIL -->
+        <div class="view" id="view-artist">
+          <div class="back" onclick="goBack()">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M10 3L4 8l6 5V3z"/></svg>Назад
+          </div>
+          <div class="dh">
+            <div class="da" id="dArt"><img id="dArtImg" src="" style="display:none"><span id="dArtLetter"></span></div>
+            <div>
+              <div class="di-type">Исполнитель</div>
+              <div class="di-name" id="dArtName"></div>
+              <div class="di-meta" id="dArtMeta"></div>
+              <button class="play-all" onclick="playAllArtist()">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2l10 6-10 6V2z"/></svg>Слушать всё
+              </button>
+            </div>
+          </div>
+          <div class="sh" style="margin-top:4px"><div class="st">Альбомы</div></div>
+          <div class="grid" id="artAlbGrid"></div>
+        </div>
+
+        <!-- ALBUM DETAIL -->
+        <div class="view" id="view-album">
+          <div class="back" onclick="goBack()">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M10 3L4 8l6 5V3z"/></svg>Назад
+          </div>
+          <div class="dh">
+            <div class="da" id="dAlb"><img id="dAlbImg" src="" style="display:none"><span id="dAlbEmoji"></span></div>
+            <div>
+              <div class="di-type">Альбом</div>
+              <div class="di-name" id="dAlbName"></div>
+              <div class="di-meta" id="dAlbMeta"></div>
+              <button class="play-all" onclick="playAllAlbum()">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2l10 6-10 6V2z"/></svg>Слушать альбом
+              </button>
+            </div>
+          </div>
+          <!-- Now Playing in album detail -->
+          <div class="hero" id="heroAlb" style="display:none;margin-bottom:18px">
+            <div class="hero-art" id="heroArtAlb">
+              <span id="heroEmojiAlb">🎵</span>
+              <img id="heroImgAlb" src="" style="display:none">
+              <div class="vinyl"></div>
+            </div>
+            <div class="hero-info">
+              <div class="hero-label">Сейчас играет</div>
+              <div class="hero-title" id="heroTitleAlb">—</div>
+              <div class="hero-sub" id="heroSubAlb">—</div>
+              <div class="viz" id="vizAlb"></div>
+              <input type="range" id="pbarAlb" min="0" max="100" value="0" step="0.1" oninput="seek(this.value)" style="display:none">
+            </div>
+          </div>
+          <div id="albTL"></div>
+        </div>
+
+        <!-- SEARCH -->
+        <div class="view" id="view-search">
+          <div class="sh"><div class="st">Поиск</div><div class="sc" id="srchC"></div></div>
+          <div id="srchTL"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAYER BAR -->
+  <div class="pbar-wrap">
+    <div class="pb-track">
+      <div class="pb-art" id="pbArt"><span id="pbEmoji">🎵</span><img id="pbImg" src="" style="display:none;position:absolute;width:100%;height:100%;object-fit:cover"></div>
+      <div class="pb-info">
+        <div class="pb-title" id="pbTitle">Нет трека</div>
+        <div class="pb-artist" id="pbArtist">—</div>
+      </div>
+    </div>
+    <div class="pb-ctrls">
+      <div class="pb-btns">
+        <button class="ctrl" id="shBtn" onclick="toggleShuffle()" title="Перемешать">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 3.5L14 6l-3.5 2.5V7H9L5.5 10.5H3v-1.5h2L8.5 5.5H10.5v-2zM3 6h2.5L7 7.5 6 8.5 4.5 7H3V6zm7.5 3l3.5 2.5L10.5 14v-1.5H9l-1-1 1-1h1.5V9z"/></svg>
+        </button>
+        <button class="ctrl" onclick="prevTr()">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 3h1.5v10H2.5V3zm9.5 1.5L6.5 8 12 11.5V4.5z"/></svg>
+        </button>
+        <button class="ctrl play" id="playBtn" onclick="togglePlay()">
+          <svg id="pi" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2l10 6-10 6V2z"/></svg>
+          <svg id="pai" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="display:none"><path d="M4 3h3v10H4V3zm5 0h3v10H9V3z"/></svg>
+        </button>
+        <button class="ctrl" onclick="nextTr()">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M12 3h1.5v10H12V3zM4 4.5L9.5 8 4 11.5V4.5z"/></svg>
+        </button>
+        <button class="ctrl" id="repBtn" onclick="toggleRepeat()" title="Повтор">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 4h8v2l2.5-2.5L12 1v2H3v5h1V4zm8 8H4v-2L1.5 12.5 4 15v-2h9V8h-1v4z"/></svg>
+        </button>
+      </div>
+      <div class="pb-prog">
+        <span class="pt" id="pct">0:00</span>
+        <input type="range" id="pbar2" min="0" max="100" value="0" step="0.1" oninput="seek(this.value)" style="flex:1">
+        <span class="pt" id="pdt">0:00</span>
+      </div>
+    </div>
+    <div class="pb-right">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="color:var(--text3)"><path d="M9 2v12l-4-4H2V6h3l4-4zm3 3a5 5 0 010 6l-1-1a3.5 3.5 0 000-4l1-1z"/></svg>
+      <input type="range" id="volBar" min="0" max="1" step="0.01" value="0.8" oninput="setVol(this.value)" style="width:80px">
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<audio id="aud"></audio>
+
+<script>
+const TOKEN = 'y0__wgBEMnuoasBGOiBQSCvidGgF1zwpo1j2hg_coi64ExHYrrrhHU9';
+const PROXY = 'https://music-player-mnwy.onrender.com/';
+const FOLDER = '/music';
+
+const aud = document.getElementById('aud');
+let tracks=[], queue=[], qi=-1;
+let shuffle=false, repeat=false;
+let vBars=[], vBars2=[], vT=null;
+let prevViewStack=[];
+let curArtist=null, curAlbum=null;
+let albumDetailIdxs=[], artistDetailIdxs=[];
+
+buildViz(); loadLib();
+
+function buildViz(){
+  const el=document.getElementById('viz');
+  if(el) for(let i=0;i<28;i++){const b=document.createElement('div');b.className='vb';el.appendChild(b);vBars.push(b);}
+  const el2=document.getElementById('vizAlb');
+  if(el2) for(let i=0;i<28;i++){const b=document.createElement('div');b.className='vb';el2.appendChild(b);vBars2.push(b);}
+}
+
+function api(url){ return fetch(PROXY+url,{headers:{'Authorization':'OAuth '+TOKEN}}).then(r=>r.json()); }
+
+// Загрузка по структуре папок: /music/Исполнитель/Альбом/трек.mp3
+// Все запросы выполняются параллельно для скорости
+async function loadLib(){
+  setPill('⟳ Загрузка...','');
+  tracks=[];
+  try{
+    // 1. Получаем корень /music
+    const root=await api(`https://cloud-api.yandex.net/v1/disk/resources?path=${enc(FOLDER)}&limit=200&sort=name`);
+    if(!root._embedded){setPill('✕ Папка не найдена','err');return;}
+
+    const topItems=root._embedded.items;
+    const artistDirs=topItems.filter(i=>i.type==='dir');
+    const rootFiles=topItems.filter(i=>isAudio(i));
+
+    // Файлы прямо в корне
+    rootFiles.forEach(i=>tracks.push(parseMeta(i,'Неизвестный','Без альбома')));
+
+    // 2. Запрашиваем все папки исполнителей ПАРАЛЛЕЛЬНО
+    const artistResults = await Promise.all(
+      artistDirs.map(artistDir =>
+        api(`https://cloud-api.yandex.net/v1/disk/resources?path=${enc(artistDir.path)}&limit=200&sort=name`)
+          .then(res => ({ artistDir, res }))
+          .catch(() => null)
+      )
+    );
+
+    // 3. Собираем все папки альбомов и запрашиваем их тоже ПАРАЛЛЕЛЬНО
+    const albumRequests = [];
+    const looseTrackResults = [];
+
+    for(const r of artistResults){
+      if(!r || !r.res._embedded) continue;
+      const artistName = r.artistDir.name;
+      const aItems = r.res._embedded.items;
+
+      // Треки прямо в папке исполнителя
+      aItems.filter(i=>isAudio(i)).forEach(i=>looseTrackResults.push({item:i, artistName, albumName:'Без альбома'}));
+
+      // Папки альбомов
+      aItems.filter(i=>i.type==='dir').forEach(albumDir=>{
+        albumRequests.push(
+          api(`https://cloud-api.yandex.net/v1/disk/resources?path=${enc(albumDir.path)}&limit=200&sort=name`)
+            .then(res => ({ res, artistName, albumName: albumDir.name }))
+            .catch(() => null)
+        );
+      });
+    }
+
+    // Добавляем треки без альбома
+    looseTrackResults.forEach(({item,artistName,albumName})=>tracks.push(parseMeta(item,artistName,albumName)));
+
+    // 4. Ждём все альбомы параллельно
+    const albumResults = await Promise.all(albumRequests);
+    for(const r of albumResults){
+      if(!r || !r.res._embedded) continue;
+      r.res._embedded.items.filter(i=>isAudio(i))
+        .forEach(i=>tracks.push(parseMeta(i,r.artistName,r.albumName)));
+    }
+
+    if(!tracks.length){setPill('✕ Треков нет','err');return;}
+    setPill(`✓ ${tracks.length} треков`,'ok');
+    renderAll();
+  }catch(e){
+    console.error(e);
+    setPill('✕ Ошибка соединения','err');
+  }
+}
+
+function isAudio(item){
+  return item.media_type==='audio'||/\.(mp3|flac|aac|ogg|wav|m4a|opus)$/i.test(item.name);
+}
+
+function parseMeta(item, forceArtist, forceAlbum){
+  const raw=item.name.replace(/\.[^.]+$/,'');
+  let artist=forceArtist, album=forceAlbum;
+  let title=raw.replace(/^\d+[\.\s\-_]+/,'').trim()||raw;
+
+  if(!forceArtist){
+    const parts=raw.split(' - ').map(s=>s.trim());
+    if(parts.length>=3){artist=parts[0];album=parts[1];title=parts.slice(2).join(' - ');}
+    else if(parts.length===2){artist=parts[0];title=parts[1];}
+    else{artist='Неизвестный';album='Без альбома';}
+  }
+
+  const preview=item.sizes?(item.sizes.find(s=>s.name==='L')||null):null;
+  return{title,artist,album,path:item.path,name:item.name,
+         preview:preview?preview.url:(item.preview||null),
+         emoji:pickEmoji(artist)};
+}
+
+function pickEmoji(n){
+  const e=['🎸','🎹','🎺','🎻','🥁','🎷','🎤','🎧','🎼','🎙','🪗','🪘','🎵'];
+  return e[[...n].reduce((a,c)=>a+c.charCodeAt(0),0)%e.length];
+}
+
+function getArtists(){
+  const m={};
+  tracks.forEach((t,i)=>{
+    if(!m[t.artist])m[t.artist]={name:t.artist,idxs:[],emoji:t.emoji,preview:t.preview};
+    m[t.artist].idxs.push(i);
+    if(!m[t.artist].preview&&t.preview)m[t.artist].preview=t.preview;
+  });
+  return Object.values(m).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+}
+
+function getAlbums(){
+  const m={};
+  tracks.forEach((t,i)=>{
+    const k=t.artist+'|||'+t.album;
+    if(!m[k])m[k]={name:t.album,artist:t.artist,idxs:[],emoji:t.emoji,preview:t.preview};
+    m[k].idxs.push(i);
+    if(!m[k].preview&&t.preview)m[k].preview=t.preview;
+  });
+  return Object.values(m).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+}
+
+function getAlbumsByArtist(artistName){
+  return getAlbums().filter(a=>a.artist===artistName);
+}
+
+function renderAll(){
+  renderArtists(); renderAllTracks(); renderSidebar();
+}
+
+function renderArtists(){
+  const arts=getArtists();
+  document.getElementById('artC').textContent=arts.length+' исполнителей';
+  document.getElementById('artGrid').innerHTML=arts.map(a=>`
+    <div class="card" onclick="showArtist(${q(a.name)})">
+      <div class="card-img">
+        ${a.preview?`<img src="${esc(a.preview)}" loading="lazy" onerror="this.style.display='none'">`:''}
+        <span class="card-letter">${a.name[0]}</span>
+        <div class="card-ov"><div class="play-circle">${svgPlay()}</div></div>
+      </div>
+      <div class="card-name">${esc(a.name)}</div>
+      <div class="card-sub">${a.idxs.length} треков</div>
+    </div>`).join('');
+}
+
+function renderAllTracks(){
+  document.getElementById('allC').textContent=tracks.length+' треков';
+  document.getElementById('allTL').innerHTML=buildTL(tracks,tracks.map((_,i)=>i));
+}
+
+function renderSidebar(){
+  const arts=getArtists();
+  document.getElementById('sbArtists').innerHTML=arts.map(a=>`
+    <div class="sai ${curArtist===a.name?'on':''}" onclick="showArtist(${q(a.name)})">
+      <div class="sai-av">
+        ${a.preview?`<img src="${esc(a.preview)}" loading="lazy" onerror="this.style.display='none'">`:''}
+        ${a.name[0]}
+      </div>
+      <span style="overflow:hidden;text-overflow:ellipsis">${esc(a.name)}</span>
+    </div>`).join('');
+}
+
+function showArtist(name){
+  const artist=getArtists().find(a=>a.name===name);
+  if(!artist)return;
+  curArtist=name;
+  prevViewStack.push(curViewId());
+  document.getElementById('dArtName').textContent=artist.name;
+  document.getElementById('dArtMeta').textContent=artist.idxs.length+' треков · '+getAlbumsByArtist(name).length+' альбомов';
+  document.getElementById('dArtLetter').textContent=artist.name[0];
+  const img=document.getElementById('dArtImg');
+  if(artist.preview){img.src=artist.preview;img.style.display='block';document.getElementById('dArtLetter').style.display='none';}
+  else{img.style.display='none';document.getElementById('dArtLetter').style.display='block';}
+  const albs=getAlbumsByArtist(name);
+  artistDetailIdxs=artist.idxs;
+  document.getElementById('artAlbGrid').innerHTML=albs.map(a=>`
+    <div class="card" onclick="showAlbum(${q(a.artist)},${q(a.name)})">
+      <div class="card-img">
+        ${a.preview?`<img src="${esc(a.preview)}" loading="lazy" onerror="this.style.display='none'">`:''}
+        <span class="card-letter">${a.emoji}</span>
+        <div class="card-ov"><div class="play-circle">${svgPlay()}</div></div>
+      </div>
+      <div class="card-name">${esc(a.name)}</div>
+      <div class="card-sub">${a.idxs.length} треков</div>
+    </div>`).join('');
+  showView('artist');
+  renderSidebar();
+}
+
+function playAllArtist(){
+  if(!artistDetailIdxs.length)return;
+  playByIdx(artistDetailIdxs[0],artistDetailIdxs);
+}
+
+function showAlbum(artistName,albumName){
+  const alb=getAlbums().find(a=>a.artist===artistName&&a.name===albumName);
+  if(!alb)return;
+  curAlbum=alb;
+  prevViewStack.push(curViewId());
+  document.getElementById('dAlbName').textContent=alb.name;
+  document.getElementById('dAlbMeta').textContent=esc(alb.artist)+' · '+alb.idxs.length+' треков';
+  document.getElementById('dAlbEmoji').textContent=alb.emoji;
+  const img=document.getElementById('dAlbImg');
+  if(alb.preview){img.src=alb.preview;img.style.display='block';document.getElementById('dAlbEmoji').style.display='none';}
+  else{img.style.display='none';document.getElementById('dAlbEmoji').style.display='block';}
+  albumDetailIdxs=alb.idxs;
+  document.getElementById('albTL').innerHTML=buildTLwithArt(alb.idxs.map(i=>tracks[i]),alb.idxs);
+  showView('album');
+}
+
+function playAllAlbum(){
+  if(!albumDetailIdxs.length)return;
+  playByIdx(albumDetailIdxs[0],albumDetailIdxs);
+}
+
+function buildTL(tArr,iArr){
+  if(!tArr.length)return`<div class="empty"><div class="ei">🎵</div><div class="et">Треков нет</div></div>`;
+  return`<div class="tlist">
+    <div class="thead"><span>#</span><span>Трек</span><span>Исполнитель</span><span></span></div>
+    ${tArr.map((t,p)=>`<div class="titem" id="row-${iArr[p]}" onclick="playByIdx(${iArr[p]},[${iArr}])">
+      <div class="tnum"><span class="tnum-v">${p+1}</span><div class="tbars"><div class="tb"></div><div class="tb"></div><div class="tb"></div></div></div>
+      <div class="t-title">${esc(t.title)}</div>
+      <div class="t-art">${esc(t.artist)}</div>
+      <div class="t-dur" id="dur-${iArr[p]}">—</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function buildTLwithArt(tArr,iArr){
+  if(!tArr.length)return`<div class="empty"><div class="ei">🎵</div><div class="et">Треков нет</div></div>`;
+  return`<div class="tlist">
+    <div class="thead-art"><span>#</span><span></span><span>Трек</span><span>Исполнитель</span><span></span></div>
+    ${tArr.map((t,p)=>`<div class="titem-art-row" id="row-${iArr[p]}" onclick="playByIdx(${iArr[p]},[${iArr}])">
+      <div class="tnum"><span class="tnum-v">${p+1}</span><div class="tbars"><div class="tb"></div><div class="tb"></div><div class="tb"></div></div></div>
+      <div class="titem-art">
+        ${t.preview?`<img src="${esc(t.preview)}" loading="lazy" onerror="this.style.display='none'">`:'🎵'}
+      </div>
+      <div class="t-title">${esc(t.title)}</div>
+      <div class="t-art">${esc(t.artist)}</div>
+      <div class="t-dur" id="dur-${iArr[p]}">—</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function onSearch(v){
+  v=v.trim().toLowerCase();
+  if(!v){showView(prevViewStack[prevViewStack.length-1]||'artists');return;}
+  const found=tracks.map((t,i)=>({t,i})).filter(({t})=>
+    t.title.toLowerCase().includes(v)||t.artist.toLowerCase().includes(v)||t.album.toLowerCase().includes(v));
+  document.getElementById('srchC').textContent=found.length+' результатов';
+  document.getElementById('srchTL').innerHTML=buildTL(found.map(x=>x.t),found.map(x=>x.i));
+  showView('search',true);
+}
+
+function nav(name){
+  prevViewStack=[];curArtist=null;
+  document.getElementById('srch').value='';
+  showView(name);
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  const ni=document.getElementById('ni-'+name);
+  if(ni)ni.classList.add('on');
+}
+
+function showView(name,noStack=false){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('view-'+name).classList.add('on');
+}
+
+function curViewId(){
+  const v=document.querySelector('.view.on');
+  return v?v.id.replace('view-',''):'artists';
+}
+
+function goBack(){
+  const prev=prevViewStack.pop()||'artists';
+  showView(prev);
+  if(prev==='artists'||prev==='tracks'){
+    document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+    const ni=document.getElementById('ni-'+prev);
+    if(ni)ni.classList.add('on');
+  }
+}
+
+// ━━ PLAYBACK ━━
+async function playByIdx(gIdx,qArr){
+  queue=qArr||tracks.map((_,i)=>i);
+  qi=queue.indexOf(gIdx);
+  if(qi<0){queue=tracks.map((_,i)=>i);qi=gIdx;}
+  const t=tracks[gIdx];
+  if(!t)return;
+
+  // Update all player UIs
+  updateNowPlayingUI(t);
+
+  document.querySelectorAll('.titem,.titem-art-row').forEach(r=>r.classList.remove('on'));
+  const row=document.getElementById('row-'+gIdx);
+  if(row){row.classList.add('on');row.scrollIntoView({block:'nearest',behavior:'smooth'});}
+
+  try{
+    const d=await api(`https://cloud-api.yandex.net/v1/disk/resources/download?path=${enc(t.path)}`);
+    if(!d.href){toast('Не удалось получить ссылку');return;}
+    aud.src=d.href;
+    aud.volume=parseFloat(document.getElementById('volBar').value);
+    aud.play();
+  }catch(e){toast('Ошибка воспроизведения');}
+}
+
+function updateNowPlayingUI(t){
+  // Player bar
+  document.getElementById('pbTitle').textContent=t.title;
+  document.getElementById('pbArtist').textContent=t.artist;
+  document.getElementById('pbEmoji').textContent=t.emoji;
+  const pbImg=document.getElementById('pbImg');
+  if(t.preview){pbImg.src=t.preview;pbImg.style.display='block';document.getElementById('pbEmoji').style.display='none';}
+  else{pbImg.style.display='none';document.getElementById('pbEmoji').style.display='block';}
+}
+
+function togglePlay(){if(!aud.src)return;aud.paused?aud.play():aud.pause();}
+function prevTr(){
+  if(aud.currentTime>3){aud.currentTime=0;return;}
+  let ni=qi-1;if(ni<0)ni=queue.length-1;
+  playByIdx(queue[ni],queue);
+}
+function nextTr(){
+  if(repeat==='one'){aud.currentTime=0;aud.play();return;}
+  let ni=shuffle?Math.floor(Math.random()*queue.length):qi+1;
+  if(ni>=queue.length)ni=0;
+  playByIdx(queue[ni],queue);
+}
+function seek(v){if(aud.duration)aud.currentTime=(v/100)*aud.duration;}
+function setVol(v){aud.volume=parseFloat(v);}
+function toggleShuffle(){shuffle=!shuffle;document.getElementById('shBtn').classList.toggle('on',shuffle);toast(shuffle?'Перемешивание вкл':'Выкл');}
+function toggleRepeat(){repeat=repeat?false:'one';document.getElementById('repBtn').classList.toggle('on',!!repeat);toast(repeat?'Повтор трека вкл':'Повтор выкл');}
+
+function animViz(on){
+  clearInterval(vT);
+  const all=[...vBars,...vBars2];
+  if(!on){all.forEach(b=>{b.style.height='3px';b.classList.remove('on')});return;}
+  all.forEach(b=>b.classList.add('on'));
+  vT=setInterval(()=>all.forEach(b=>b.style.height=(Math.random()*18+3)+'px'),100);
+}
+
+aud.addEventListener('play',()=>{
+  document.getElementById('pi').style.display='none';
+  document.getElementById('pai').style.display='block';
+  animViz(true);
+});
+aud.addEventListener('pause',()=>{
+  document.getElementById('pi').style.display='block';
+  document.getElementById('pai').style.display='none';
+  animViz(false);
+});
+aud.addEventListener('ended',nextTr);
+aud.addEventListener('timeupdate',()=>{
+  if(!aud.duration)return;
+  const p=(aud.currentTime/aud.duration)*100,c=fmt(aud.currentTime),d=fmt(aud.duration);
+  document.getElementById('pbar2').value=p;
+  document.getElementById('pbar2').style.background=`linear-gradient(to right,rgba(255,255,255,0.9) ${p}%,rgba(255,255,255,0.1) ${p}%)`;
+  document.getElementById('pct').textContent=c;document.getElementById('pdt').textContent=d;
+});
+aud.addEventListener('loadedmetadata',()=>{
+  const el=document.getElementById('dur-'+queue[qi]);
+  if(el)el.textContent=fmt(aud.duration);
+});
+
+function fmt(s){if(!s||isNaN(s))return'0:00';return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function enc(s){return encodeURIComponent(s);}
+function q(s){return`'${String(s).replace(/'/g,"\\'")}'`;}
+function svgPlay(){return`<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2l10 6-10 6V2z"/></svg>`;}
+function setPill(t,type){const e=document.getElementById('pill');e.textContent=t;e.className='pill'+(type?' '+type:'');}
+function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2500);}
+
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(e.code==='Space'){e.preventDefault();togglePlay();}
+  if(e.code==='ArrowRight'&&aud.duration)aud.currentTime=Math.min(aud.currentTime+10,aud.duration);
+  if(e.code==='ArrowLeft')aud.currentTime=Math.max(aud.currentTime-10,0);
+  if(e.code==='KeyN')nextTr();
+  if(e.code==='KeyP')prevTr();
+});
+
+// ── PWA: service worker + media session ──
+(function(){
+  // Service Worker
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/sw.js', {scope:'/'})
+      .then(()=>console.log('[PWA] SW registered'))
+      .catch(e=>console.warn('[PWA] SW error:',e));
+  }
+
+  // Media Session — управление с экрана блокировки и наушников
+  function updateMS(t){
+    if(!('mediaSession' in navigator)||!t)return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: t.title||'Unknown', artist: t.artist||'', album: t.album||'',
+      artwork:[
+        {src:'/icon-192.png',sizes:'192x192',type:'image/svg+xml'},
+        {src:'/icon-512.png',sizes:'512x512',type:'image/svg+xml'}
+      ]
+    });
+    navigator.mediaSession.setActionHandler('play',()=>aud.play());
+    navigator.mediaSession.setActionHandler('pause',()=>aud.pause());
+    navigator.mediaSession.setActionHandler('nexttrack',()=>nextTr());
+    navigator.mediaSession.setActionHandler('previoustrack',()=>prevTr());
+  }
+  const _pt = window.playTrack;
+  window.playTrack = function(idx){ _pt(idx); setTimeout(()=>updateMS(queue[idx]),150); };
+})();
+</script>
+</body>
+</html>
